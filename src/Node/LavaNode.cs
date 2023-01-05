@@ -27,15 +27,17 @@ namespace Victoria.Node {
     /// </summary>
     public class LavaNode : LavaNode<LavaPlayer<LavaTrack>, LavaTrack> {
         /// <inheritdoc />
-        public LavaNode(DiscordSocketClient socketClient,
-                        NodeConfiguration nodeConfiguration,
-                        ILogger<LavaNode> logger)
+        public LavaNode(
+            DiscordSocketClient socketClient,
+            NodeConfiguration nodeConfiguration,
+            ILogger<LavaNode> logger)
             : base(socketClient, nodeConfiguration, logger) { }
 
         /// <inheritdoc />
-        public LavaNode(DiscordShardedClient shardedClient,
-                        NodeConfiguration nodeConfiguration,
-                        ILogger<LavaNode> logger)
+        public LavaNode(
+            DiscordShardedClient shardedClient,
+            NodeConfiguration nodeConfiguration,
+            ILogger<LavaNode> logger)
             : base(shardedClient, nodeConfiguration, logger) { }
     }
 
@@ -105,15 +107,17 @@ namespace Victoria.Node {
         private bool _refConnected;
 
         /// <inheritdoc />
-        public LavaNode(DiscordSocketClient socketClient,
-                        NodeConfiguration nodeConfiguration,
-                        ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger)
+        public LavaNode(
+            DiscordSocketClient socketClient,
+            NodeConfiguration nodeConfiguration,
+            ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger)
             : this(socketClient as BaseSocketClient, nodeConfiguration, logger) { }
 
         /// <inheritdoc />
-        public LavaNode(DiscordShardedClient shardedClient,
-                        NodeConfiguration nodeConfiguration,
-                        ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger)
+        public LavaNode(
+            DiscordShardedClient shardedClient,
+            NodeConfiguration nodeConfiguration,
+            ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger)
             : this(shardedClient as BaseSocketClient, nodeConfiguration, logger) { }
 
         /// <summary>
@@ -121,12 +125,15 @@ namespace Victoria.Node {
         /// </summary>
         /// <param name="nodeConfiguration"></param>
         /// <param name="logger"></param>
-        public LavaNode(NodeConfiguration nodeConfiguration,
-                        ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger)
+        public LavaNode(
+            NodeConfiguration nodeConfiguration,
+            ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger)
             : this(default(BaseSocketClient), nodeConfiguration, logger) { }
 
-        private LavaNode(BaseSocketClient socketClient, NodeConfiguration nodeConfiguration,
-                         ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger) {
+        private LavaNode(
+            BaseSocketClient socketClient,
+            NodeConfiguration nodeConfiguration,
+            ILogger<LavaNode<TLavaPlayer, TLavaTrack>> logger) {
             _nodeConfiguration = nodeConfiguration;
             _logger = logger;
 
@@ -239,7 +246,7 @@ namespace Victoria.Node {
             await voiceChannel.ConnectAsync(_nodeConfiguration.SelfDeaf, false, true)
                 .ConfigureAwait(false);
 
-            player = (TLavaPlayer) Activator
+            player = (TLavaPlayer)Activator
                 .CreateInstance(typeof(TLavaPlayer), _webSocketClient, voiceChannel, textChannel);
 
             _playerCache.TryAdd(voiceChannel.GuildId, player);
@@ -291,7 +298,7 @@ namespace Victoria.Node {
             using var requestMessage =
                 new HttpRequestMessage(HttpMethod.Get, $"{_nodeConfiguration.HttpEndpoint}{urlPath}") {
                     Headers = {
-                        {"Authorization", _nodeConfiguration.Authorization}
+                        { "Authorization", _nodeConfiguration.Authorization }
                     }
                 };
 
@@ -400,6 +407,7 @@ namespace Victoria.Node {
                             return;
                         }
 
+                        var playerTrack = player.Track;
                         LavaTrack lavaTrack = default;
                         if (root.TryGetProperty("track", out var trackElement)) {
                             lavaTrack = TrackDecoder.Decode($"{trackElement}");
@@ -408,7 +416,6 @@ namespace Victoria.Node {
                         var type = $"{root.GetProperty("type")}";
                         switch (type) {
                             case "TrackStartEvent":
-                                player.Track = (TLavaTrack) lavaTrack;
                                 player.PlayerState = PlayerState.Playing;
 
                                 if (OnTrackStart == null) {
@@ -417,12 +424,12 @@ namespace Victoria.Node {
 
                                 await OnTrackStart.Invoke(new TrackStartEventArg<TLavaPlayer, TLavaTrack> {
                                     Player = player,
-                                    Track = lavaTrack
+                                    Track = playerTrack
                                 });
                                 break;
 
                             case "TrackEndEvent":
-                                var trackEndReason = (TrackEndReason) (byte) $"{root.GetProperty("reason")}"[0];
+                                var trackEndReason = (TrackEndReason)(byte)$"{root.GetProperty("reason")}"[0];
                                 if (trackEndReason is not TrackEndReason.Replaced) {
                                     player.Track = default;
                                     player.PlayerState = PlayerState.Stopped;
@@ -434,7 +441,7 @@ namespace Victoria.Node {
 
                                 await OnTrackEnd.Invoke(new TrackEndEventArg<TLavaPlayer, TLavaTrack> {
                                     Player = player,
-                                    Track = lavaTrack,
+                                    Track = playerTrack,
                                     Reason = trackEndReason
                                 });
                                 break;
@@ -449,7 +456,7 @@ namespace Victoria.Node {
 
                                 await OnTrackException.Invoke(new TrackExceptionEventArg<TLavaPlayer, TLavaTrack> {
                                     Player = player,
-                                    Track = lavaTrack,
+                                    Track = playerTrack,
                                     Exception = new LavaException {
                                         Message = root.GetProperty("message").GetString(),
                                         Severity = root.GetProperty("severity").GetString(),
@@ -467,7 +474,7 @@ namespace Victoria.Node {
 
                                 await OnTrackStuck.Invoke(new TrackStuckEventArg<TLavaPlayer, TLavaTrack> {
                                     Player = player,
-                                    Track = lavaTrack,
+                                    Track = playerTrack,
                                     Threshold = long.Parse($"{root.GetProperty("thresholdMs")}")
                                 });
                                 break;
@@ -503,8 +510,10 @@ namespace Victoria.Node {
             }
         }
 
-        private Task OnUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState pastState,
-                                                  SocketVoiceState currentState) {
+        private Task OnUserVoiceStateUpdatedAsync(
+            SocketUser user,
+            SocketVoiceState pastState,
+            SocketVoiceState currentState) {
             if (_baseSocketClient.CurrentUser?.Id != user.Id) {
                 return Task.CompletedTask;
             }
